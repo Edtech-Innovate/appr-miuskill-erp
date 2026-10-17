@@ -1,0 +1,904 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Roboto:ital,wght@0,500;0,700;1,500;1,700&display=swap" rel="stylesheet">
+    <?php
+      error_reporting(0);
+      require '../../includes/db-config.php';
+      $id = mysqli_real_escape_string($conn, $_GET['student_id']);
+      $id = base64_decode($id);
+      $student_id = intval(str_replace('W1Ebt1IhGN3ZOLplom9I', '', $id));
+      $get_record = $conn->query("SELECT Students.*, CONCAT(Students.First_Name, ' ', Students.Middle_Name, ' ', Students.Last_Name) as StudentName, RIGHT(CONCAT('000000', Students.ID), 6) as Student_ID, Admission_Sessions.Name as Session, Courses.Name as Course, Courses.Short_Name as Short_Name, Sub_Courses.Name as Sub_Course FROM Students LEFT JOIN Admission_Sessions ON Students.Admission_Session_ID = Admission_Sessions.ID LEFT JOIN Courses ON Students.Course_ID = Courses.ID LEFT JOIN Sub_Courses ON Students.Sub_Course_ID = Sub_Courses.ID WHERE Students.ID = $student_id");
+      $st = mysqli_fetch_assoc($get_record);
+      $photo = $conn->query("SELECT Location FROM Student_Documents WHERE Student_ID = ".$st['ID']." AND Type = 'Photo'");
+      $photo = $photo->fetch_assoc();
+      $photo = $photo['Location'];
+      $signature = $conn->query("SELECT Location FROM Student_Documents WHERE Student_ID = ".$st['ID']." AND Type = 'Student Signature'");
+      $signature = $signature->fetch_assoc();
+      $signature = $signature['Location'];
+      $address = json_decode($st['Address'], true);
+
+      $high_school = $conn->query("SELECT * FROM Student_Academics WHERE Student_ID = ".$st['ID']." AND Type = 'High School'");
+      $high_school = $high_school->fetch_assoc();
+
+      $intermediate = $conn->query("SELECT * FROM Student_Academics WHERE Student_ID = ".$st['ID']." AND Type = 'Intermediate'");
+      $intermediate = $intermediate->fetch_assoc();
+
+      $ug = $conn->query("SELECT * FROM Student_Academics WHERE Student_ID = ".$st['ID']." AND Type = 'UG'");
+      $ug = $ug->fetch_assoc();
+
+      $pg = $conn->query("SELECT * FROM Student_Academics WHERE Student_ID = ".$st['ID']." AND Type = 'PG'");
+      $pg = $pg->fetch_assoc();
+
+      $other = $conn->query("SELECT * FROM Student_Academics WHERE Student_ID = ".$st['ID']." AND Type = 'Other'");
+      $other = $other->fetch_assoc();
+    ?>
+    <style>
+      @media print {
+      .pagebreak { page-break-before: always; } /* page-break-after works, as well */
+      }
+      img {
+      -webkit-print-color-adjust: exact;
+      }
+      .title-par {
+      PADDING-RIGHT: 3px;
+      PADDING-LEFT: 3px;
+      FONT-SIZE: 14px;
+      COLOR: #000000;
+      LINE-HEIGHT: 17px;
+      FONT-FAMILY: arial;
+      text-align: left;
+      text-decoration: none;
+      padding-top: 5px;
+      }
+      .board {
+      FONT-WEIGHT: normal;
+      border-collapse: collapse;
+      color: #666666;
+      border-right-style: solid;
+      border-left-style: solid;
+      border-right-color: #d1d1d1;
+      border-left-color: #0066CC;
+      border-right-width: 1px;
+      border-left-width: 1px;
+      text-decoration: none;
+      padding-top: 2px;
+      padding-right: 2px;
+      padding-bottom: 2px;
+      padding-left: 2px;
+      text-align: justify;
+      font-family: "kruti Dev 020";
+      FONT-FAMILY: Arial, Helvetica, sans-serif;
+      TEXT-DECORATION: none;
+      border: 1px solid #d1d1d1;
+      font-size: 14px;
+      color: #333333;
+      line-height: 20px;
+      padding: 5px;
+      }
+      .imgpad {
+      padding-top: 5px;
+      padding-right: 5px;
+      padding-bottom: 5px;
+      padding-left: 5px;
+      line-height: 17px;
+      text-decoration: none;
+      padding-top: 5px;
+      }
+      .pahragraph {
+      PADDING-RIGHT: 3px;
+      PADDING-LEFT: 3px;
+      FONT-SIZE: 12px;
+      PADDING-BOTTOM: 3px;
+      FONT-SIZE: 12px;
+      COLOR: #000000;
+      LINE-HEIGHT: 17px;
+      FONT-FAMILY: arial;
+      text-align: justify;
+      padding-top: 5px;
+      border: 1px solid #EDEDED;
+      }
+      .text {
+      FONT-WEIGHT: normal;
+      MARGIN-TOP: 10px;
+      FONT-SIZE: 11px;
+      COLOR: #000000;
+      LINE-HEIGHT: 17px;
+      FONT-FAMILY: arial;
+      text-decoration: none;
+      }
+      .formbox {
+      PADDING-BOTTOM: 5px;
+      LINE-HEIGHT: 125%;
+      PADDING-TOP: 5px;
+      background-color: #FFFFFF;
+      }
+      .formfield {
+      PADDING-RIGHT: 2px;
+      PADDING-LEFT: 2px;
+      PADDING-BOTTOM: 2px;
+      COLOR: #CCCCCC;
+      PADDING-TOP: 2px;
+      BACKGROUND-COLOR: #FFFFFF;
+      font-size: 12px;
+      font-family: Arial, Helvetica, sans-serif;
+      }
+      .thead {
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 14px;
+      COLOR: #333333;
+      LINE-HEIGHT: 17px;
+      FONT-FAMILY: arial;
+      text-align: center;
+      margin: 10px;
+      }
+      .login {
+      FONT-WEIGHT: normal;
+      MARGIN-TOP: 10px;
+      FONT-SIZE: 14px;
+      COLOR: #336699;
+      LINE-HEIGHT: 0px;
+      FONT-FAMILY: arial;
+      text-align: left;
+      padding-left: 5px;
+      text-decoration: none;
+      }
+      A.login:hover {
+      text-decoration: underline;
+      }
+      .topmargin {
+      margin-top: 5px;
+      margin-left: 15px;
+      background-color: #F2F2F2;
+      width: 970px;
+      }
+      .lang {
+      FONT-SIZE: 11px;
+      COLOR: #0000CC;
+      FONT-FAMILY: arial, Verdana, Arial;
+      text-decoration: none;
+      }
+      .hamaraup {
+      margin: 0 auto;
+      background-color: #FFFFFF;
+      height: 80px;
+      width: 970px;
+      }
+      .pages {
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 14px;
+      COLOR: #044482;
+      FONT-FAMILY: tahoma;
+      TEXT-DECORATION: underline;
+      }
+      .HR {
+      FONT-WEIGHT: normal;
+      FONT-SIZE: 5px;
+      COLOR: #999999;
+      FONT-FAMILY: Arial, Helvetica, sans-serif;
+      TEXT-DECORATION: none;
+      padding: 1px;
+      }
+      .fields {
+      PADDING-BOTTOM: 5px;
+      LINE-HEIGHT: 100%;
+      PADDING-TOP: 5px;
+      background-color: #FFFFFF;
+      }
+      .more {
+      FONT-SIZE: 11px;
+      COLOR: #0066CC;
+      FONT-FAMILY: Arial, Helvetica, sans-serif;
+      TEXT-DECORATION: none;
+      padding-top: 3px;
+      padding-bottom: 3px;
+      font-weight: bold;
+      }
+      A.more:hover {
+      TEXT-DECORATION: underline
+      }
+      .borderline {
+      FONT-WEIGHT: normal;
+      border-collapse: collapse COLOR;
+      color: #000000;
+      font-family: Arial, Helvetica, sans-serif;
+      text-decoration: none;
+      font-size: 10px;
+      FONT-FAMILY: Arial, Helvetica, sans-serif;
+      TEXT-DECORATION: none;
+      border: 1px solid #EAEAEA;
+      font-size: 14px;
+      color: #333333;
+      line-height: 20px;
+      padding: 4px;
+      }
+      .border {
+      FONT-WEIGHT: normal;
+      border-collapse: collapse;
+      color: #666666;
+      border-right-style: solid;
+      border-left-style: solid;
+      border-right-color: #0066CC;
+      border-left-color: #0066CC;
+      border-right-width: 1px;
+      border-left-width: 1px;
+      text-decoration: none;
+      padding-top: 2px;
+      padding-right: 2px;
+      padding-bottom: 2px;
+      padding-left: 2px;
+      text-align: justify;
+      font-family: "kruti Dev 020";
+      FONT-FAMILY: Arial, Helvetica, sans-serif;
+      TEXT-DECORATION: none;
+      border: 1px solid #EAEAEA;
+      font-size: 14px;
+      color: #333333;
+      line-height: 20px;
+      }
+      .tbborder {
+      FONT-WEIGHT: normal;
+      text-decoration: none;
+      text-align: justify;
+      font-family: "kruti Dev 020";
+      FONT-FAMILY: Arial, Helvetica, sans-serif;
+      TEXT-DECORATION: none;
+      border: 1px solid #616060;
+      font-size: 14px;
+      color: #333333;
+      line-height: 20px;
+      padding: 2px;
+      }
+      .boldlink {
+      PADDING-RIGHT: 0px;
+      PADDING-LEFT: 0px;
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 14px;
+      PADDING-BOTTOM: 0px;
+      COLOR: #FFFFFF;
+      PADDING-TOP: 0px;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none
+      }
+      .admintopnav {
+      PADDING-RIGHT: 2px;
+      line-height: 23px;
+      PADDING-LEFT: 2px;
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 14px;
+      PADDING-BOTTOM: 0px;
+      COLOR: #FFFFFF;
+      PADDING-TOP: 0px;
+      FONT-FAMILY: arial;
+      TEXT-DECORATION: none
+      }
+      A.admintopnav:hover {
+      line-height: 23px;
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 14px;
+      COLOR: #FFFFFF;
+      FONT-FAMILY: arial;
+      TEXT-DECORATION: none;
+      background-color: #fff;
+      color: blue;
+      padding: 4px;
+      }
+      .toplinks {
+      PADDING-RIGHT: 5px;
+      PADDING-LEFT: 5px;
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 14px;
+      PADDING-BOTTOM: 5px;
+      COLOR: #FFFFFF;
+      PADDING-TOP: 5px;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none
+      }
+      A.toplinks:hover {
+      PADDING-RIGHT: 5px;
+      PADDING-LEFT: 5px;
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 14px;
+      PADDING-BOTTOM: 5px;
+      COLOR: #FFFFFF;
+      PADDING-TOP: 5px;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: underline;
+      }
+      A.boldlink:hover {
+      COLOR: #000000;
+      TEXT-DECORATION: underline
+      }
+      .footlinks {
+      PADDING-RIGHT: 5px;
+      PADDING-LEFT: 5px;
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 10px;
+      PADDING-BOTTOM: 5px;
+      COLOR: #CC3300;
+      PADDING-TOP: 5px;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none;
+      }
+      A.footlinks:hover {
+      PADDING-RIGHT: 5px;
+      PADDING-LEFT: 5px;
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 14px;
+      PADDING-BOTTOM: 5px;
+      COLOR: #CB0C13;
+      PADDING-TOP: 5px;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none;
+      }
+      A.sidelink:hover {
+      TEXT-DECORATION: underline;
+      COLOR: #BC2E31;
+      }
+      .table-text {
+      FONT-WEIGHT: normal;
+      FONT-SIZE: 12px;
+      COLOR: #FFFFFF;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none;
+      padding: 5px;
+      }
+      .table {
+      PADDING-RIGHT: 0px;
+      PADDING-LEFT: 5px;
+      FONT-WEIGHT: normal;
+      FONT-SIZE: 12px;
+      PADDING-BOTTOM: 0px;
+      COLOR: #000000;
+      PADDING-TOP: 0px;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none;
+      border-right-width: 9px;
+      border-left-width: 9px;
+      border-right-style: solid;
+      border-left-style: solid;
+      border-right-color: #CC3333;
+      border-left-color: #CC3333;
+      }
+      .marquee {
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 16px;
+      COLOR: #CCCCCC;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none;
+      text-align: justify;
+      padding-right: 4px;
+      padding-left: 4px;
+      padding-top: 4px;
+      padding-bottom: 4px;
+      }
+      A.marquee:hover {
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 12px;
+      TEXT-DECORATION: underline
+      }
+      .sublink {
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 12px;
+      COLOR: #2C679F;
+      FONT-FAMILY: verdana;
+      text-decoration: none;
+      padding: 2px;
+      margin-left: 10px;
+      }
+      A.sublink:hover {
+      TEXT-DECORATION: underline;
+      }
+      .aageadhik {
+      FONT-WEIGHT: normal;
+      FONT-SIZE: 12px;
+      COLOR: #2C679F;
+      FONT-FAMILY: verdana;
+      text-decoration: none;
+      }
+      .wel {
+      FONT: 14px/20px arial;
+      COLOR: #696a6a;
+      padding-left: 4px;
+      }
+      A.aageadhik:hover {
+      TEXT-DECORATION: underline;
+      }
+      .request {
+      COLOR: #0000FF;
+      TEXT-DECORATION: none;
+      font-family: Verdana, Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      text-align: center;
+      padding-right: 8px;
+      padding-bottom: 8px;
+      font-weight: bold;
+      }
+      .feedback {
+      PADDING-LEFT: 14px;
+      FONT-WEIGHT: normal;
+      FONT-SIZE: 11px;
+      COLOR: #000000;
+      FONT-FAMILY: tahoma;
+      TEXT-DECORATION: none
+      }
+      .subdetail {
+      PADDING-RIGHT: 5px;
+      PADDING-LEFT: 5px;
+      FONT-WEIGHT: normal;
+      FONT-SIZE: 11px;
+      PADDING-BOTTOM: 5px;
+      COLOR: #747474;
+      PADDING-TOP: 5px;
+      FONT-FAMILY: tahoma;
+      TEXT-DECORATION: none
+      }
+      .contentlink {
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 10px;
+      COLOR: #FFFFFF;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none
+      }
+      A.contentlink:hover {
+      TEXT-DECORATION: underline
+      }
+      .visitedlink {
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 12px;
+      COLOR: #FFFFFF;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none
+      }
+      A.visitedlink:hover {
+      COLOR: #FFFFFF;
+      TEXT-DECORATION: underline
+      }
+      A.contentlink-bot:hover {
+      COLOR: #ffffff;
+      ;
+      TEXT-DECORATION: underline;
+      font-family: "kruti Dev 020";
+      }
+      .copyright {
+      FONT-WEIGHT: normal;
+      FONT-SIZE: 11px;
+      PADDING-BOTTOM: 4px;
+      COLOR: #666666;
+      PADDING-TOP: 4px;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none;
+      text-align: right;
+      margin-right: 5px;
+      }
+      .searching {
+      FONT-WEIGHT: normal;
+      FONT-SIZE: 11px;
+      PADDING-BOTTOM: 4px;
+      COLOR: #666666;
+      PADDING-TOP: 4px;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none;
+      text-align: right;
+      margin-right: 5px;
+      }
+      .txtbold {
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 12px;
+      COLOR: #333333;
+      FONT-FAMILY: verdana;
+      TEXT-DECORATION: none
+      }
+      .visited {
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 13px;
+      COLOR: #009933;
+      FONT-FAMILY: Arial, Helvetica, sans-serif;
+      TEXT-DECORATION: none;
+      }
+      .numbers {
+      FONT-WEIGHT: normal;
+      FONT-SIZE: 14px;
+      COLOR: #ffffff;
+      FONT-FAMILY: Arial, Helvetica, sans-serif;
+      TEXT-DECORATION: none;
+      background-color: #FFBABA;
+      padding: 5px;
+      border: 1px solid #CCCCCC;
+      line-height: 35px;
+      }
+      A.numbers:hover {
+      FONT-WEIGHT: normal;
+      FONT-SIZE: 14px;
+      COLOR: #ffffff;
+      FONT-FAMILY: Arial, Helvetica, sans-serif;
+      TEXT-DECORATION: none;
+      background-color: #C20F15;
+      padding: 5px;
+      border: 1px solid #CCCCCC;
+      }
+      A.txtbold:hover {
+      COLOR: #ffffff;
+      TEXT-DECORATION: none;
+      background-color: #4688C8;
+      }
+      .txtline {
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 12px;
+      COLOR: #0033CC;
+      FONT-FAMILY: Verdana, Arial, Helvetica, sans-serif;
+      TEXT-DECORATION: underline;
+      padding: 0px;
+      }
+      .email {
+      FONT-SIZE: 12pt;
+      COLOR: #FFFFFF;
+      FONT-FAMILY: Verdana, Arial, Helvetica, arial;
+      BACKGROUND-COLOR: #6b86a6;
+      TEXT-DECORATION: none;
+      font-weight: bold;
+      margin-bottom: 5px;
+      line-height: 30px;
+      padding: 3px;
+      }
+      .shershayri {
+      font-family: 'Conv_K013', Sans-Serif;
+      text-align: left;
+      font-size: 16px;
+      color: #333333;
+      text-decoration: none;
+      border: 1px solid #CC3333;
+      padding: 4px;
+      }
+      .DDlink {
+      font-family: 'Conv_K013', Sans-Serif;
+      text-align: justify;
+      font-size: 18px;
+      font-weight: normal;
+      text-decoration: none;
+      }
+      .state-marquee {
+      text-align: center;
+      font-size: 16px;
+      color: #333333;
+      text-decoration: none;
+      font-style: normal;
+      font-weight: normal;
+      font-variant: normal;
+      background-attachment: fixed;
+      border: 1px solid #eaeaea;
+      }
+      .hindi-link {
+      font-family: 'Conv_K013', Sans-Serif;
+      text-align: right;
+      font-size: 12px;
+      color: #FFFFFF;
+      text-decoration: none;
+      font-style: normal;
+      font-weight: normal;
+      font-variant: normal;
+      background-attachment: fixed;
+      line-height: 20px;
+      padding: 5px;
+      }
+      A.hindi-link:hover {
+      font-weight: bold;
+      }
+      .keyskill {
+      font-family: arial;
+      font-size: 14px;
+      color: #000000;
+      font-weight: bold;
+      text-decoration: none;
+      margin-top: 24px;
+      margin-right: 0px;
+      margin-bottom: 0px;
+      margin-left: 15px;
+      }
+      .text-heading {
+      font-family: 'Conv_K013', Sans-Serif;
+      text-align: justify;
+      font-size: 24px;
+      color: #000099;
+      text-decoration: none;
+      font-style: normal;
+      font-weight: normal;
+      font-variant: normal;
+      background-attachment: fixed;
+      padding: 8px;
+      }
+      .hindi-sublink {
+      font-family: 'Conv_K013', Sans-Serif;
+      text-align: justify;
+      font-size: 20px;
+      color: #000099;
+      text-decoration: underline;
+      font-style: normal;
+      font-weight: normal;
+      font-variant: normal;
+      background-attachment: fixed;
+      padding: 8px;
+      }
+      .hindi-heading {
+      font-family: 'Conv_K013', Sans-Serif;
+      text-align: center;
+      font-size: 25px;
+      color: #000099;
+      text-decoration: none;
+      font-style: normal;
+      font-weight: normal;
+      font-variant: normal;
+      background-attachment: fixed;
+      padding: 8px;
+      }
+      .bluehead {
+      PADDING-RIGHT: 0px;
+      PADDING-LEFT: 0px;
+      FONT-WEIGHT: bold;
+      FONT-SIZE: 16px;
+      PADDING-BOTTOM: 8px;
+      COLOR: #333333;
+      PADDING-TOP: 8px;
+      FONT-FAMILY: Arial, Helvetica, sans-serif;
+      TEXT-DECORATION: none;
+      line-height: 12px;
+      }
+      .post-text {
+      FONT: 14px/20px arial;
+      COLOR: #696a6a;
+      }
+      .post-text_b {
+      FONT: 14px/20px arial;
+      COLOR: #696a6a;
+      font-weight: bold;
+      }
+      .post-text_large {
+      FONT: 25px arial;
+      COLOR: #696a6a;
+      font-weight: bold;
+      text-decoration: none;
+      }
+      .page-content-wrapper .page-content {
+      margin-left: 235px;
+      margin-top: 0;
+      min-height: 600px;
+      padding: 25px 20px 10px;
+      }
+      .page-content {
+      margin-top: 0;
+      padding: 0;
+      /* background-color: #eaeef3; */
+      }
+      .print-content {
+      width: 794px;
+      margin: 0px auto;
+      border: 3px solid #cec5c5;
+      background: #ffffff;
+      border: 2px solid black;
+      border-radius: 5px;
+      }
+      .st td {
+      font-family: Lucida Fax;
+      font-size: 13px;
+      color: #003f6f;
+      }
+      .st-padding {
+      padding: 6px;
+      }
+    </style>
+  </head>
+  <body class="page-content" onclick="close();">
+    <div id="bodywraper">
+      <div style="position:absolute;top:0.28in;left:6.20in;width:1.4in;line-height:0.21in;"><span style="font-style:normal;font-weight:700;font-size:10pt;font-family: 'Open Sans', sans-serif;color:#2b2a29"><?php echo $st['Student_ID']; ?></span><span style="font-style:normal;font-weight:normal;font-size:11pt;font-family: 'Open Sans', sans-serif;color:#2b2a29"> </span><br/></span></div>
+      <div style="position:absolute;top:2.40in;left:6.65in;width:1.20in;height:1.38in;"  />
+        <div style="border-style: solid;border-width: thin;"><img src="<?=$photo?>" alt="Student Picture" style="width: 100%;height: 100%;"></div>
+      </div>
+      <!----------------------------------------Course---------------------------------------------------->
+      <?php $course_name = $st['Short_Name']. " ".$st['Sub_Course'];
+        $new_course_name = $st['Short_Name']. " (".$st['Sub_Course'].")";
+        ?>
+      <?php if($st['Short_Name']=='BA'){ ?>
+      <img style="position:absolute;top:4.04in;left:0.38in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif($st['Short_Name']=='MA'){ ?>
+      <img style="position:absolute;top:4.04in;left:2.316in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif(strcasecmp($course_name,"bsc pcm")==0){ ?>
+      <img style="position:absolute;top:4.39in;left:0.38in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif(strcasecmp($new_course_name,'MSc (Mathematics)')==0){ ?>
+      <img style="position:absolute;top:4.39in;left:2.30in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif($st['Short_Name']=='B.Com'){ ?>
+      <img style="position:absolute;top:4.74in;left:0.38in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif($st['Short_Name']=='MCom'){ ?>
+      <img style="position:absolute;top:4.74in;left:2.30in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php } elseif($st['Short_Name']=='MBA'){ ?>
+      <img style="position:absolute;top:5.09in;left:0.38in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }else{ ?>
+      <img style="position:absolute;top:5.09in;left:2.315in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php } ?>
+      <div style="position:absolute;top:5.03in;left:4.05in;width:1.38in;line-height:0.21in;"><span style="font-style:normal;font-weight:800;font-size:11pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower($new_course_name)) ?></span></div>
+      <div style="position:absolute;top:4.53in;left:4.85in;width:1.38in;line-height:0.21in;"><span style="font-style:normal;font-weight:800;font-size:11pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower($st['Session'])) ?></span></div>
+      <!----------------------------------------Course END------------------------------------------------>		
+      <!----------------------------------------Gender---------------------------------------------------->
+      <?php if($st['Gender']=='Male'){ ?>
+      <img style="position:absolute;top:5.87in;left:1.46in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif($st['Gender']=='Female'){ ?>
+      <img style="position:absolute;top:5.87in;left:2.20in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php } else{ ?>
+      <img style="position:absolute;top:5.87in;left:2.97in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php } ?>
+      <!----------------------------------------Gender END------------------------------------------------>
+      <!---------------------------------------DOB-------------------------------------------------------->
+      <?php $dob = str_replace("-","",$st['DOB']); ?>
+      <div style="position:absolute;top:5.81in;left:5.05in;width:1.38in;line-height:0.21in;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;letter-spacing:1em;color:#2b2a29"><?php echo substr($dob, 6, 2); ?></span></div>
+      <div style="position:absolute;top:5.81in;left:5.6in;width:1.38in;line-height:0.21in;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;letter-spacing:1em;color:#2b2a29"><?php echo substr($dob, 4, 2); ?></span></div>
+      <div style="position:absolute;top:5.81in;left:6.1in;width:1.38in;line-height:0.21in;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;letter-spacing:1em;color:#2b2a29"><?php echo substr($dob, 0, 4); ?></span></div>
+      <!---------------------------------------DOB-------------------------------------------------------->
+      <!------------------------------------Details------------------------------------------------------->
+      <?php
+        $left=1.90;
+        $student_name=str_replace('  ', ' ', $st['StudentName']);
+        for($i=0;$i<=29;$i++)
+        {
+          echo '<div style="position:absolute;top:6.08in;left:'.($left).'in;width:0.20in;height:0.23in"  /><div style="font-family: Open Sans, sans-serif; padding: 4% 4% 4% 4%; border-style: solid;height: 75%;font-size:14px;border-color: #616e75;border-width: thin;text-align: center;">'.strtoupper($student_name[$i]).'</div></div>';
+          $left=0.20+$left;
+        }
+        ?>
+      <?php
+        $left=1.90;
+        $father_name=$st['Father_Name'];
+        for($i=0;$i<=29;$i++)
+        {
+        echo '<div style="position:absolute;top:6.60in;left:'.($left).'in;width:0.20in;height:0.23in"  /><div style="font-family: Open Sans, sans-serif; padding: 4% 4% 4% 4%; border-style: solid;height: 75%;font-size:14px;border-color: #616e75;border-width: thin;text-align: center;">'.strtoupper($father_name[$i]).'</div></div>';
+        $left=0.20+$left;
+        }
+        ?>
+      <?php
+        $left=1.90;
+        $mother_name=$st['Mother_Name'];
+        for($i=0;$i<=29;$i++)
+        {
+        echo '<div style="position:absolute;top:6.86in;left:'.($left).'in;width:0.20in;height:0.23in"  /><div style="font-family: Open Sans, sans-serif; padding: 4% 4% 4% 4%; border-style: solid;height: 75%;font-size:14px;border-color: #616e75;border-width: thin;text-align: center;">'.strtoupper($mother_name[$i]).'</div></div>';
+        $left=0.20+$left;
+        }
+        ?>
+      <?php
+        $left=1.90;
+        $aadhar=$st['Aadhar_Number'];
+        for($i=0;$i<=29;$i++)
+        {
+        echo '<div style="position:absolute;top:7.13in;left:'.($left).'in;width:0.20in;height:0.23in"  /><div style="font-family: Open Sans, sans-serif; padding: 4% 4% 4% 4%; border-style: solid;height: 75%;font-size:14px;border-color: #616e75;border-width: thin;text-align: center;">'.strtoupper($aadhar[$i]).'</div></div>';
+        $left=0.20+$left;
+        }
+        ?>
+      <?php
+        $left=1.90;
+        $email=$st['Email'];
+        for($i=0;$i<=29;$i++)
+        {
+        echo '<div style="position:absolute;top:7.41in;left:'.($left).'in;width:0.20in;height:0.23in"  /><div style="font-family: Open Sans, sans-serif; padding: 4% 4% 4% 4%; border-style: solid;height: 75%;font-size:14px;border-color: #616e75;border-width: thin;text-align: center;">'.strtoupper($email[$i]).'</div></div>';
+        $left=0.20+$left;
+        }
+        ?>
+      <?php
+        $st['Maritual_Status'] = 'U';
+        $left=1.90;
+        if($st['Maritual_Status']=='U'){ $marital_status = 'UNMARRIED';}else{ $marital_status = 'MARRIED';}
+        for($i=0;$i<=29;$i++)
+        {
+        echo '<div style="position:absolute;top:7.69in;left:'.($left).'in;width:0.20in;height:0.23in"  /><div style="font-family: Open Sans, sans-serif; padding: 4% 4% 4% 4%; border-style: solid;height: 75%;font-size:14px;border-color: #616e75;border-width: thin;text-align: center;">'.strtoupper($marital_status[$i]).'</div></div>';
+        $left=0.18+$left;
+        }
+        ?>
+      <!------------------------------------Details End--------------------------------------------------->
+      <!------------------------------------CATEGORY------------------------------------------------------>
+      <?php 
+        $gcateg['Name'] = strtoupper(strtolower($st['Category']));
+      if($gcateg['Name']=='SC'){ ?>
+      <img style="position:absolute;top:8.05in;left:1.67in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif($gcateg['Name']=='ST'){ ?>
+      <img style="position:absolute;top:8.05in;left:2.27in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif($gcateg['Name']=='OBC'){ ?>
+      <img style="position:absolute;top:8.05in;left:2.85in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif($gcateg['Name']=='GENERAL'){ ?>
+      <img style="position:absolute;top:8.05in;left:3.586in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }else{ ?>
+      <img style="position:absolute;top:8.05in;left:4.48in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php } ?>
+      <div style="position:absolute;top:8.01in;left:5.65in;width:1.58in;line-height:0.21in;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower($st['Nationality'])); ?></span></div>
+      <!------------------------------------CATEGORY End-------------------------------------------------->
+      <!------------------------------------Relegion------------------------------------------------------>
+      <?php 
+        $st['Relegion'] = "";
+        if(strtolower($st['Religion'])=='hindu'){ ?>
+      <img style="position:absolute;top:8.36in;left:1.82in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif(strtolower($st['Religion'])=='muslim'){ ?>
+      <img style="position:absolute;top:8.36in;left:2.72in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif(strtolower($st['Religion'])=='sikh'){ ?>
+      <img style="position:absolute;top:8.36in;left:3.57in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif(strtolower($st['Religion'])=='christian'){ ?>
+      <img style="position:absolute;top:8.36in;left:4.42in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }elseif(strtolower($st['Religion'])=='jain'){ ?>
+      <img style="position:absolute;top:8.36in;left:5.20in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <?php }else{?>
+      <img style="position:absolute;top:8.36in;left:5.93in;width:0.12in;" src="/assets/img/forms/checked.png" />
+      <div style="position:absolute;top:8.31in;left:6.13in;width:0.58in;line-height:0.21in;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower($st['Religion'])); ?></span></div>
+      <?php } ?>
+      <!------------------------------------Relegion End-------------------------------------------------->
+      <!-----------------------------------Form Rec------------------------------------------------------->
+      <div style="position:absolute;top:9.42in;left:5.995in;width:1.58in;line-height:0.21in;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower($st['OA_Number'])); ?></span></div>
+      <div style="position:absolute;top:9.68in;left:0.85in;width:2.58in;line-height:0.21in;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower($st['StudentName'])); ?></span></div>
+      <div style="position:absolute;top:9.68in;left:4.65in;width:2.88in;line-height:0.21in;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower($st['Father_Name'])); ?></span></div>
+      <div style="position:absolute;top:10.05in;left:1.49in;width:2.58in;line-height:0.21in;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower($st['Short_Name'])).' - '.strtoupper(strtolower($st['Sub_Course'])); ?></span></div>
+      <div style="position:absolute;top:9.95in;left:4.89in;width:0.58in;line-height:0.21in;"><img src="<?=$signature?>" width="80px;" height="40px;"></div>
+      <!-----------------------------------Form Rec End--------------------------------------------------->
+      <embed src="00012.jpg" width="775px" />
+      <br>
+      <!--------------------------------------Address----------------------------------------------------->
+      <div style="position:absolute;top:11.48in;left:0.50in;width:3.70in;line-height:0.21in; padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($address['present_address']))); ?></span></div>
+      <div style="position:absolute;top:12.01in;left:0.70in;width:1.90in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($address['present_city']))); ?></span></div>
+      <div style="position:absolute;top:12.01in;left:2.53in;width:1.60in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($address['present_state']))); ?></span></div>
+      <div style="position:absolute;top:12.25in;left:1in;width:1.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($address['present_pincode']))); ?></span></div>
+      <?php if($st['PermanentPincode']!=$st['PresentPincode']){?>
+      <div style="position:absolute;top:11.48in;left:4.30in;width:3.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($address['present_address']))); ?></span></div>
+      <div style="position:absolute;top:12.01in;left:4.60in;width:1.50in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($address['present_city']))); ?></span></div>
+      <div style="position:absolute;top:12.01in;left:6.1in;width:1.60in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($address['present_state']))); ?></span></div>
+      <div style="position:absolute;top:12.25in;left:5in;width:1.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($address['present_pincode']))); ?></span></div>
+      <?php } ?>
+      <!--------------------------------------Address End------------------------------------------------->
+      <!--------------------------------------Parents Info------------------------------------------------>
+      <div style="position:absolute;top:12.86in;left:1.80in;width:1.90in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"></span></div>
+      <div style="position:absolute;top:12.86in;left:5.60in;width:1.90in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"></span></div>
+      <div style="position:absolute;top:13.16in;left:2.30in;width:1.90in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($st['Alternate_Contact']))); ?></span></div>
+      <div style="position:absolute;top:13.16in;left:5.40in;width:1.90in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($st['Alternate_Email']))); ?></span></div>
+      <!--------------------------------------Parents Info End-------------------------------------------->
+      <!--------------------------------------Academic Details-------------------------------------------->
+      <!-----------Degree----------------->
+      <!-----------Degree----------------->
+      <!-----------Board----------------->
+      <div style="position:absolute;top:14.12in;left:1.90in;width:1.50in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($high_school['Board/Institute']))); ?></span></div>
+      <div style="position:absolute;top:14.46in;left:1.90in;width:1.50in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($intermediate['Board/Institute']))); ?></span></div>
+      <div style="position:absolute;top:14.82in;left:1.90in;width:1.50in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($ug['Board/Institute']))); ?></span></div>
+      <div style="position:absolute;top:15.16in;left:1.90in;width:1.50in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($pg['Board/Institute']))); ?></span></div>
+      <div style="position:absolute;top:15.82in;left:1.90in;width:1.50in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($other['Board/Institute']))); ?></span></div>
+      <!-----------Board----------------->
+      <!-----------School Name----------------->
+      <!-----------School Name----------------->
+      <!-----------Total Marks----------------->
+      <!-----------Total Marks----------------->
+      <!-----------Obtained Marks----------------->
+      <!-----------Obtained Marks----------------->
+      <!-----------Percentage----------------->
+      <div style="position:absolute;top:14.12in;left:6.00in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($high_school['Total_Marks']))); ?></span></div>
+      <div style="position:absolute;top:14.46in;left:6.0in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($intermediate['Total_Marks']))); ?></span></div>
+      <div style="position:absolute;top:14.82in;left:6.0in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($ug['Total_Marks']))); ?></span></div>
+      <div style="position:absolute;top:15.16in;left:6.0in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($pg['Total_Marks']))); ?></span></div>
+      <div style="position:absolute;top:15.82in;left:6.0in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($other['Total_Marks']))); ?></span></div>
+      <!-----------Percentage----------------->
+      <!-------------YEAR----------------->
+      <div style="position:absolute;top:14.12in;left:6.60in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($high_school['Year']))); ?></span></div>
+      <div style="position:absolute;top:14.46in;left:6.60in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($intermediate['Year']))); ?></span></div>
+      <div style="position:absolute;top:14.82in;left:6.60in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($ug['Year']))); ?></span></div>
+      <div style="position:absolute;top:15.16in;left:6.60in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($pg['Year']))); ?></span></div>
+      <div style="position:absolute;top:15.82in;left:6.60in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($other['Year']))); ?></span></div>
+      <!-------------YEAR----------------->
+      <!-----------Subject----------------->
+      <div style="position:absolute;top:14.12in;left:7.23in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:7pt;;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($high_school['Subject']))); ?></span></div>
+      <div style="position:absolute;top:14.46in;left:7.23in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:7pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($intermediate['Subject']))); ?></span></div>
+      <div style="position:absolute;top:14.82in;left:7.23in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:7pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($ug['Subject']))); ?></span></div>
+      <div style="position:absolute;top:15.16in;left:7.23in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:7pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($pg['Subject']))); ?></span></div>
+      <div style="position:absolute;top:15.82in;left:7.23in;width:0.70in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:7pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($other['Subject']))); ?></span></div>
+      <!-----------Subject----------------->
+      <!--------------------------------------Academic Details End---------------------------------------->
+      <!--------------------------------------Declaration------------------------------------------------->
+      <div style="position:absolute;top:18.22in;left:1.89in;width:0.58in;padding-top:118px;"><img src="<?php echo $signature ?>" width="60px;" height="25px;"></div>
+      <div style="position:absolute;top:18.22in;left:5.60in;width:1.90in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo strtoupper(strtolower(trim($st['Father_Name']))); ?></span></div>
+      <div style="position:absolute;top:18.52in;left:6.35in;width:1.00in;line-height:0.21in;padding-top:118px;"><span style="font-style:normal;font-weight:normal;font-size:10pt;font-family: 'Open Sans', sans-serif;"><?php echo date("d-m-Y", strtotime($st['Added_On'])); ?></span></div>
+      <!--------------------------------------Declaration End--------------------------------------------->	
+      <embed src="0002.jpg" width="775px" />
+      <script>
+        window.print();
+        function close(){ window.close();}
+      </script>
+    </div>
+  </body>
+</html>

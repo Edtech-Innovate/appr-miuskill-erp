@@ -1,0 +1,12 @@
+# Dependencies & Framework folders
+vendor/
+node_modules/
+
+# Uploads, Media & Archives
+uploads/
+*.zip
+*.tar.gz
+
+# Logs & Environment
+*.log
+.env

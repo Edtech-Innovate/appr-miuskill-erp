@@ -1,0 +1,310 @@
+<?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+session_start();
+if (isset($_POST['username']) && isset($_POST['password'])) {
+  require '../../includes/db-config.php';
+
+  $username = mysqli_real_escape_string($conn, $_POST['username']);
+  $password = mysqli_real_escape_string($conn, $_POST['password']);
+  if (empty($username) || empty($password)) {
+    echo json_encode(['status' => 403, 'message' => 'Fields cannot be empty!']);
+    session_destroy();
+    exit();
+  }
+  $check = $conn->query("SELECT * FROM Users WHERE Code = '$username' AND Password = AES_ENCRYPT('$password','60ZpqkOnqn0UQQ2MYTlJ') $logged_in_users");
+  if ($check->num_rows > 0) {
+    $user_details = mysqli_fetch_assoc($check);
+    if ($user_details['Status'] == 1) {
+      foreach ($user_details as $key => $user_detail) {
+        $_SESSION[$key] = $user_detail;
+      }
+      if ($_SESSION['Role'] != 'Administrator') {
+        $all_universities = array();
+        $counter = 1;
+        $universities = $conn->query("SELECT University_User.University_ID, Universities.Is_B2C, CONCAT(Universities.Short_Name, ' (', Universities.Vertical, ')') AS Name, Universities.Has_Unique_Center, Universities.Has_Unique_StudentID, Universities.Has_LMS, Universities.Logo FROM University_User LEFT JOIN Universities ON University_User.University_ID = Universities.ID WHERE `User_ID` = " . $_SESSION['ID']);
+        while ($dt = $universities->fetch_assoc()) {
+          $all_universities[] = $dt['University_ID'];
+          if ($counter == 1) {
+            $_SESSION['university_id'] = $dt['University_ID'];
+            $_SESSION['university_name'] = $dt['Name'];
+            $_SESSION['unique_center'] = $dt['Has_Unique_Center'];
+            $_SESSION['student_id'] = $dt['Has_Unique_StudentID'];
+            $_SESSION['university_logo'] = $dt['Logo'];
+            $_SESSION['has_lms'] = $dt['Has_LMS'];
+            $_SESSION['crm'] = $dt['Is_B2C'];
+          }
+          $counter++;
+        }
+        $_SESSION['Alloted_Universities'] = array_filter(array_unique($all_universities));
+      }
+
+      if (!array_key_exists('university_id', $_SESSION) && !in_array($_SESSION['Role'], ['Administrator'])) {
+        session_destroy();
+        exit(json_encode(['status' => 400, 'message' => 'Please allot University!']));
+      }
+
+      // University Query
+      $query = $_SESSION['Role'] != "Administrator" ? " AND University_ID = " . $_SESSION['university_id'] : "";
+      $_SESSION['UniversityQuery'] = $query;
+
+      $setting_names = $conn->query("SELECT * FROM Custom_User_Names");
+      while ($sn = $setting_names->fetch_assoc()) {
+        $_SESSION[$sn['Name']] = $sn['Rename_As_Singular'];
+        $_SESSION[$sn['Name'] . '-Outer'] = $sn['Rename_As'];
+      }
+
+
+      // RolesQuery
+      $role_query = " AND {{ table }}.{{ column }} = " . $_SESSION['ID'];
+
+      if ($_SESSION['Role'] === 'Administrator' || $_SESSION['Role'] == 'Operations' || $_SESSION['Role'] == 'Accountant') {
+        $role_query = " AND {{ table }}.{{ column }} IS NOT NULL";
+      } elseif ($_SESSION['Role'] === 'University Head') {
+        $center_list = array($_SESSION['ID']);
+        $counsellorIds = array();
+        $subCounsellorIds = array();
+        $centersIds = array();
+
+        $counsellors = $conn->query("SELECT `User_ID` FROM University_User WHERE Reporting = " . $_SESSION['ID'] . " AND University_ID = " . $_SESSION['university_id']);
+        while ($counsellor = $counsellors->fetch_assoc()) {
+          $center_list[] = $counsellor['User_ID'];
+          $counsellorIds[] = $counsellor['User_ID'];
+        }
+
+        if (!empty($counsellorIds)) {
+          $sub_counsellors = $conn->query("SELECT `User_ID` FROM University_User WHERE Reporting IN (" . implode(",", $counsellorIds) . ") AND University_ID = " . $_SESSION['university_id']);
+          while ($sub_counsellor = $sub_counsellors->fetch_assoc()) {
+            $center_list[] = $sub_counsellor['User_ID'];
+            $subCounsellorIds[] = $sub_counsellor['User_ID'];
+          }
+
+          $centers = $conn->query("SELECT `User_ID` FROM University_User WHERE Reporting IN (" . implode(",", $center_list) . ") AND University_ID = " . $_SESSION['university_id']);
+          while ($center = $centers->fetch_assoc()) {
+            $center_list[] = $center['User_ID'];
+            $centersIds[] = $center['User_ID'];
+          }
+
+          if (!empty($centersIds)) {
+            $sub_centers = $conn->query("SELECT `User_ID` FROM University_User WHERE Reporting IN (" . implode(",", $center_list) . ") AND University_ID = " . $_SESSION['university_id']);
+            while ($sub_center = $sub_centers->fetch_assoc()) {
+              $center_list[] = $sub_center['User_ID'];
+            }
+          }
+        }
+        // echo "<pre>";
+        // print_r(implode(',', $center_list)); die;
+        $role_query = " AND {{ table }}.{{ column }} IN (" . implode(",", $center_list) . ")";
+      } elseif ($_SESSION['Role'] == 'Counsellor') {
+        $center_list = array($_SESSION['ID']);
+        $counsellorIds = array($_SESSION['ID']);
+        $subCounsellorIds = array();
+        $centersIds = array();
+        
+        if (!empty($counsellorIds)) {
+          $sub_counsellors = $conn->query("SELECT `User_ID` FROM University_User WHERE Reporting IN (" . implode(",", $counsellorIds) . ") AND University_ID = " . $_SESSION['university_id']);
+          while ($sub_counsellor = $sub_counsellors->fetch_assoc()) {
+            $center_list[] = $sub_counsellor['User_ID'];
+            $subCounsellorIds[] = $sub_counsellor['User_ID'];
+          }
+
+          $centers = $conn->query("SELECT `User_ID` FROM University_User WHERE Reporting IN (" . implode(",", $center_list) . ") AND University_ID = " . $_SESSION['university_id']);
+          while ($center = $centers->fetch_assoc()) {
+            $center_list[] = $center['User_ID'];
+            $centersIds[] = $center['User_ID'];
+          }
+
+          // echo "<pre>";
+          // print_r(implode(',', $center_list)); die;
+          
+          if (!empty($centersIds)) {
+            $sub_centers = $conn->query("SELECT `User_ID` FROM University_User WHERE Reporting IN (" . implode(",", $center_list) . ") AND University_ID = " . $_SESSION['university_id']);
+            while ($sub_center = $sub_centers->fetch_assoc()) {
+              $center_list[] = $sub_center['User_ID'];
+            }
+          }
+        }
+        // echo "<pre>";
+        // print_r(implode(',', $center_list)); die;
+        $role_query = " AND {{ table }}.{{ column }} IN (" . implode(",", $center_list) . ")";
+      } elseif ($_SESSION['Role'] === 'Sub-Counsellor') {
+        $center_list = array($_SESSION['ID']);
+        $subCounsellorIds = array($_SESSION['ID']);
+
+        $centers = $conn->query("SELECT `User_ID` FROM University_User WHERE Reporting IN (" . implode(",", $subCounsellorIds) . ") AND University_ID = " . $_SESSION['university_id']);
+        while ($center = $centers->fetch_assoc()) {
+          $center_list[] = $center['User_ID'];
+          $centersIds[] = $center['User_ID'];
+        }
+
+        if (!empty($centersIds)) {
+          $sub_centers = $conn->query("SELECT `User_ID` FROM University_User WHERE Reporting IN (" . implode(",", $counsellorIds) . ") AND University_ID = " . $_SESSION['university_id']);
+          while ($sub_center = $sub_centers->fetch_assoc()) {
+            $center_list[] = $sub_center['User_ID'];
+          }
+        }
+
+        $role_query = " AND {{ table }}.{{ column }} IN (" . implode(",", $center_list) . ")";
+      } elseif ($_SESSION['Role'] === 'Center') {
+        $center_list = array($_SESSION['ID']);
+        $centersIds = array($_SESSION['ID']);
+
+        $sub_centers = $conn->query("SELECT `User_ID` FROM University_User WHERE Reporting IN (" . implode(",", $centersIds) . ") AND University_ID = " . $_SESSION['university_id']);
+        while ($sub_center = $sub_centers->fetch_assoc()) {
+          $center_list[] = $sub_center['User_ID'];
+        }
+
+        $role_query = " AND {{ table }}.{{ column }} IN (" . implode(",", $center_list) . ")";
+      } elseif ($_SESSION['Role'] === 'Sub-Center') {
+        $role_query = " AND {{ table }}.{{ column }} = '" . $_SESSION['ID'] . "'";
+      } else {
+        $role_query = " AND {{ table }}.{{ column }} = '" . $_SESSION['ID'] . "'";
+      }
+
+      // Payment Gateway
+      if ($_SESSION['Role'] != 'Administrator') {
+        $gateway = $conn->query("SELECT * FROM Payment_Gateways WHERE University_ID = " . $_SESSION['university_id']);
+        if ($gateway->num_rows > 0) {
+          $gateway = $gateway->fetch_assoc();
+          $_SESSION['gateway'] = $gateway['Type'];
+          $_SESSION['access_key'] = $gateway['Access_Key'];
+          $_SESSION['secret_key'] = $gateway['Secret_Key'];
+        }
+      }
+
+      $_SESSION['RoleQuery'] = $role_query;
+
+      if ($_SESSION['Role'] == 'Academic Head') {
+        echo json_encode(['status' => 200, 'message' => 'Welcome ' . $user_details['Name'], 'url' => '/academics/departments']);
+      } else {
+        echo json_encode(['status' => 200, 'message' => 'Welcome ' . $user_details['Name'], 'url' => '/admissions/applications']);
+      }
+    } else {
+      echo json_encode(['status' => 403, 'message' => 'Access denied! Please contact administrator.']);
+      session_destroy();
+    }
+  } else {
+    $university_ids = array();
+    $has_lmses = $conn->query("SELECT ID FROM Universities WHERE Has_LMS = 1");
+    while ($has_lms = $has_lmses->fetch_assoc()) {
+      $university_ids[] = $has_lms['ID'];
+    }
+
+    if (empty($university_ids)) {
+      echo json_encode(['status' => 400, 'message' => 'Invalid credentials!']);
+      session_destroy();
+      exit();
+    }
+
+    $student = $conn->query("SELECT Students.*, Students.ID as Student_Table_ID, Courses.Name as Course, Sub_Courses.Name as Sub_Course, Course_Types.Name as Course_Type, Admission_Sessions.Name as Admission_Session, Admission_Types.Name as Admission_Type, CONCAT(Courses.Short_Name, ' (',Sub_Courses.Name,')') as Course_Sub_Course, TIMESTAMPDIFF(YEAR, DOB, CURDATE()) AS Age FROM Students LEFT JOIN Courses ON Students.Course_ID = Courses.ID LEFT JOIN Course_Types ON Courses.Course_Type_ID = Course_Types.ID LEFT JOIN Sub_Courses ON Students.Sub_Course_ID = Sub_Courses.ID LEFT JOIN Admission_Sessions ON Students.Admission_Session_ID = Admission_Sessions.ID LEFT JOIN Admission_Types ON Students.Admission_Type_ID = Admission_Types.ID WHERE Students.Enrollment_No  LIKE '$username' AND (UPPER(DATE_FORMAT(Students.DOB, '%d%b%Y')) = '$password' OR Students.Contact = '$password') AND Students.Step = 4 AND Students.Status = 1 AND Students.University_ID IN (" . implode(",", $university_ids) . ")");
+    if ($student->num_rows > 0) {
+      $student = mysqli_fetch_assoc($student);
+      $_SESSION['Role'] = 'Student';
+      foreach ($student as $key => $user_detail) {
+        $_SESSION[$key] = $user_detail;
+      }
+
+      $_SESSION['Step'] = $_SESSION['Step'] + 1;
+
+      $all_universities = array();
+      $counter = 1;
+      $universities = $conn->query("SELECT ID as University_ID, Universities.Is_B2C, CONCAT(Universities.Short_Name, ' (', Universities.Vertical, ')') AS Name, Universities.Has_Unique_Center, Universities.Has_Unique_StudentID, Universities.Has_LMS, Universities.Logo FROM Universities WHERE ID = " . $_SESSION['University_ID'] . "");
+      while ($dt = $universities->fetch_assoc()) {
+        $all_universities[] = $dt['University_ID'];
+        if ($counter == 1) {
+          $_SESSION['university_id'] = $dt['University_ID'];
+          $_SESSION['university_name'] = $dt['Name'];
+          $_SESSION['unique_center'] = $dt['Has_Unique_Center'];
+          $_SESSION['university_logo'] = $dt['Logo'];
+          $_SESSION['student_id'] = $dt['Has_Unique_StudentID'];
+          $_SESSION['has_lms'] = $dt['Has_LMS'];
+          $_SESSION['crm'] = $dt['Is_B2C'];
+        }
+        $counter++;
+      }
+      $_SESSION['Alloted_Universities'] = array_filter(array_unique($all_universities));
+      $student_name = array($student['First_Name'], $student['Middle_Name'], $student['Last_Name']);
+      $_SESSION['Name'] = implode(' ', $student_name);
+
+      $allowed = array();
+      $pages = $conn->query("SELECT Pages.Name FROM Pages LEFT JOIN Page_Access ON Pages.ID = Page_Access.Page_ID AND Page_Access.University_ID = " . $_SESSION['university_id'] . " WHERE Student = 1 AND Pages.Type = 'LMS'");
+      while ($page = $pages->fetch_assoc()) {
+        $allowed[] = $page['Name'];
+      }
+      $_SESSION['LMS_Permissions'] = $allowed;
+
+      $photo = $conn->query("SELECT Location FROM Student_Documents WHERE Student_ID = " . $_SESSION['ID'] . " AND Type = 'Photo'");
+      if ($photo->num_rows > 0) {
+        $photo = $photo->fetch_assoc();
+        $_SESSION['Photo'] = $photo['Location'];
+      }else{
+        $_SESSION['Photo'] = "/assets/img/default-user.png";
+      }
+
+      $gateway = $conn->query("SELECT * FROM Payment_Gateways WHERE University_ID = " . $_SESSION['university_id']);
+      if ($gateway->num_rows > 0) {
+        $gateway = $gateway->fetch_assoc();
+        $_SESSION['gateway'] = $gateway['Type'];
+        $_SESSION['access_key'] = $gateway['Access_Key'];
+        $_SESSION['secret_key'] = $gateway['Secret_Key'];
+      }
+
+      echo json_encode(['status' => 200, 'message' => 'Welcome ' . implode(" ", $student_name), 'url' => '/dashboard']);
+    } else {
+      $lead = $conn->query("SELECT Lead_Status.ID, Leads.`Name`, Leads.Email, Leads.Alternate_Email, Leads.Mobile, Leads.Alternate_Mobile, Lead_Status.Unique_ID, Lead_Status.University_ID, Lead_Status.Course_ID, Lead_Status.Sub_Course_ID, Students.Father_Name, Students.Mother_Name, Students.Aadhar_Number, Students.Admission_Session_ID, Students.Admission_Type_ID, Students.Step, Students.Added_For, Students.DOB, Students.Gender, Students.Category, Students.Employement_Status, Students.Admission_Duration, Students.Duration, Students.Marital_Status, Students.Religion, Students.Nationality, Students.Address, Students.ID as Student_Table_ID FROM Lead_Status LEFT JOIN Leads ON Lead_Status.Lead_ID = Leads.ID LEFT JOIN Students ON Lead_Status.Unique_ID = Students.Unique_ID WHERE Lead_Status.Unique_ID = '$username' AND Leads.Mobile = '$password' AND (Students.Step < 4 || Students.Step IS NULL)");
+      if ($lead->num_rows > 0) {
+        $lead = $lead->fetch_assoc();
+        $_SESSION['Role'] = 'Student';
+        foreach ($lead as $key => $user_detail) {
+          $_SESSION[$key] = $user_detail;
+        }
+
+        $_SESSION['Step'] = $_SESSION['Step'] + 1;
+
+        $all_universities = array();
+        $counter = 1;
+        $universities = $conn->query("SELECT ID as University_ID, Universities.Is_B2C, CONCAT(Universities.Short_Name, ' (', Universities.Vertical, ')') AS Name, Universities.Has_Unique_Center, Universities.Has_Unique_StudentID, Universities.Has_LMS, Universities.Logo FROM Universities WHERE ID = " . $_SESSION['University_ID'] . "");
+        while ($dt = $universities->fetch_assoc()) {
+          $all_universities[] = $dt['University_ID'];
+          if ($counter == 1) {
+            $_SESSION['university_id'] = $dt['University_ID'];
+            $_SESSION['university_name'] = $dt['Name'];
+            $_SESSION['unique_center'] = $dt['Has_Unique_Center'];
+            $_SESSION['university_logo'] = $dt['Logo'];
+            $_SESSION['student_id'] = $dt['Has_Unique_StudentID'];
+            $_SESSION['has_lms'] = $dt['Has_LMS'];
+            $_SESSION['crm'] = $dt['Is_B2C'];
+          }
+          $counter++;
+        }
+        $_SESSION['Alloted_Universities'] = array_filter(array_unique($all_universities));
+
+        $allowed = array();
+        $pages = $conn->query("SELECT Pages.Name FROM Pages LEFT JOIN Page_Access ON Pages.ID = Page_Access.Page_ID AND Page_Access.University_ID = " . $_SESSION['university_id'] . " WHERE Student = 1 AND Pages.Type = 'LMS'");
+        while ($page = $pages->fetch_assoc()) {
+          $allowed[] = $page['Name'];
+        }
+
+        $gateway = $conn->query("SELECT * FROM Payment_Gateways WHERE University_ID = " . $_SESSION['university_id']);
+        if ($gateway->num_rows > 0) {
+          $gateway = $gateway->fetch_assoc();
+          $_SESSION['gateway'] = $gateway['Type'];
+          $_SESSION['access_key'] = $gateway['Access_Key'];
+          $_SESSION['secret_key'] = $gateway['Secret_Key'];
+        }
+
+        $_SESSION['LMS_Permissions'] = $allowed;
+        $_SESSION['lead_id'] = base64_encode("W1Ebt1IhGN3ZOLplom9I" . $lead['ID'] . "W1Ebt1IhGN3ZOLplom9I");
+
+        echo json_encode(['status' => 200, 'message' => 'Welcome ' . $_SESSION['Name'], 'url' => '/student/application-form']);
+      } else {
+        echo json_encode(['status' => 400, 'message' => 'Invalid credentials!']);
+        session_destroy();
+      }
+    }
+  }
+} else {
+  echo json_encode(['status' => 403, 'message' => 'Forbidden']);
+  session_destroy();
+}
